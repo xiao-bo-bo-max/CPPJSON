@@ -64,9 +64,15 @@ ostream &operator<<(ostream &, const JSON &);
 
 shared_ptr<JSONValue> parse_value(const string &, size_t &pos);
 
-bool isEmpty(const JSON &);
+bool JSONisEmpty(const JSON &);
 
-size_t size(const JSON &);
+size_t JSONSize(const JSON &);
+
+bool removeElement(JSONObject &json_object, const string &str);
+
+bool popElement(JSONArray &json_array, size_t pos);
+
+void JSONInitialization(JSON &, const JSONValue &);
 
 class BaseValue {
 public:
@@ -150,9 +156,11 @@ class JSONObject : public BaseValue {
     /* 友元函数 */
     friend ostream &operator<<(ostream &, const JSONObject &);
 
-    friend bool isEmpty(const JSON &);
+    friend bool JSONisEmpty(const JSON &);
 
-    friend size_t size(const JSON &);
+    friend size_t JSONSize(const JSON &);
+
+    friend bool removeElement(JSONObject &json_object, const string &str);
 
 public:
     /* 构造函数 */
@@ -177,11 +185,13 @@ private:
 /* JSON值为array类型 */
 class JSONArray : public BaseValue {
     /* 友元函数 */
-    friend bool isEmpty(const JSON &);
+    friend bool JSONisEmpty(const JSON &);
 
     friend ostream &operator<<(ostream &, const JSONArray &);
 
-    friend size_t size(const JSON &);
+    friend size_t JSONSize(const JSON &);
+
+    friend bool popElement(JSONArray &json_array, size_t pos);
 
 public:
     /* 构造函数 */
@@ -240,6 +250,8 @@ class JSONValue {
 
     friend ostream &operator<<(ostream &out, const JSONValue &json_array);
 
+    friend void JSONInitialization(JSON &, const JSONValue &);
+
 public:
     /* 赋值运算符 */
     JSONValue &operator=(const string &v);
@@ -286,13 +298,15 @@ private:
 class JSON {
     friend ostream &operator<<(ostream &out, const JSON &json_value);
 
-    friend bool isEmpty(const JSON &);
+    friend bool JSONisEmpty(const JSON &);
 
-    friend size_t size(const JSON &);
+    friend size_t JSONSize(const JSON &);
 
     friend void JSONArray::push_back(const JSON &value);
 
     friend JSONValue &JSONValue::operator=(const JSON &json);
+
+    friend void JSONInitialization(JSON &, const JSONValue &);
 
 public:
     /* 构造函数 */
@@ -300,16 +314,32 @@ public:
 
     explicit JSON(const char str[]) : JSON(string(str)) {}
 
+    JSON(const JSONValue &);
+
+    JSON &operator=(const JSONValue &);
+
+    /* 成员函数 */
+    bool empty();
+
+    size_t size();
+
+
     /* JSON对象特有的操作 */
     JSONValue &operator[](const string &);
 
     vector<string> keys();
+
+    bool remove(const string &str);
+
+    bool remove(const char str[]);
 
     /* JSON数组特有的操作*/
     JSONValue &operator[](const size_t &);
 
     template<typename T>
     void push_back(const T &);
+
+    bool pop(size_t pos);
 
 private:
     std::variant<JSONObject, JSONArray> value;

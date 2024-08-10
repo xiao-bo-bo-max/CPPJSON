@@ -196,14 +196,10 @@ void JSONArray::push_back(const JSONValue &value) {
 void JSONArray::push_back(const JSON &json) {
     std::visit([this](const auto &v) {
         switch (v.valueType()) {
-            case JSON_OBJECT_TYPE: {
+            case JSON_OBJECT_TYPE:
+            case JSON_ARRAY_TYPE:
                 this->array_value.push_back(make_shared<JSONValue>(JSONValue::Value(v)));
                 break;
-            }
-            case JSON_ARRAY_TYPE: {
-                this->array_value.push_back(make_shared<JSONValue>(JSONValue::Value(v)));
-                break;
-            }
             default: {
                 throw std::runtime_error("Unrecognized json class");
             }
@@ -340,9 +336,8 @@ JSONValue &JSONValue::operator=(const JSONValue &json_value) {
                 this->value.emplace<JSONArray>(std::get<JSONArray>(json_value.value));
                 break;
             }
-            default: {
+            default:
                 throw std::runtime_error("Unrecognized json_value class");
-            }
         }
     }, json_value.value);
     return *this;
@@ -351,17 +346,12 @@ JSONValue &JSONValue::operator=(const JSONValue &json_value) {
 JSONValue &JSONValue::operator=(const JSON &json) {
     std::visit([this](const auto &v) {
         switch (v.valueType()) {
-            case JSON_OBJECT_TYPE: {
+            case JSON_OBJECT_TYPE:
+            case JSON_ARRAY_TYPE:
                 this->value = JSONValue::Value(v);
                 break;
-            }
-            case JSON_ARRAY_TYPE: {
-                this->value = JSONValue::Value(v);
-                break;
-            }
-            default: {
+            default:
                 throw std::runtime_error("Unrecognized json_value class");
-            }
         }
     }, json.value);
     return *this;
@@ -378,6 +368,29 @@ JSON::JSON(const string &str) : value(std::in_place_type<JSONObject>, "{}") {
     } else {
         throw std::runtime_error("Unqualified JSON string");
     }
+}
+
+void JSONInitialization(JSON &json, const JSONValue &json_value) {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, json_value.value);
+    if (type == JSON_OBJECT_TYPE) {
+        const auto &json_object = std::get<JSONObject>(json_value.value);
+        json.value = json_object;
+    } else if (type == JSON_ARRAY_TYPE) {
+        const auto &json_array = std::get<JSONArray>(json_value.value);
+        json.value = json_array;
+    } else
+        throw std::runtime_error("Cannot initialize JSON objects with this type");
+}
+
+JSON::JSON(const JSONValue &json_value) : value(std::in_place_type<JSONObject>, "{}") {
+    JSONInitialization(*this, json_value);
+}
+
+JSON &JSON::operator=(const JSONValue &json_value) {
+    JSONInitialization(*this, json_value);
+    return *this;
 }
 
 ostream &operator<<(ostream &out, const JSON &json) {
@@ -420,7 +433,7 @@ vector<string> JSON::keys() {
     }
 }
 
-bool isEmpty(const JSON &json) {
+bool JSONisEmpty(const JSON &json) {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
     }, json.value);
@@ -440,7 +453,7 @@ bool isEmpty(const JSON &json) {
         throw std::runtime_error("Unrecognized type");
 }
 
-size_t size(const JSON &json) {
+size_t JSONSize(const JSON &json) {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
     }, json.value);
@@ -452,6 +465,14 @@ size_t size(const JSON &json) {
         return json_array.array_value.size();
     } else
         throw std::runtime_error("Unrecognized type");
+}
+
+bool JSON::empty() {
+    return JSONisEmpty(*this);
+}
+
+size_t JSON::size() {
+    return JSONSize(*this);
 }
 
 JSONValue::operator string() const {
@@ -476,7 +497,53 @@ JSONValue::operator long double() const {
     }
 }
 
+bool removeElement(JSONObject &json_object, const string &str) {
+    auto it = std::find(json_object.object_key.begin(), json_object.object_key.end(), str);
+    if (it != json_object.object_key.end()) {
+        size_t pos = it - json_object.object_key.begin();
+        json_object.object_key.erase(pos + json_object.object_key.begin());
+        json_object.object_value.erase(pos + json_object.object_value.begin());
+        return true;
+    } else {
+        return false;
+    }
+}
 
+bool JSON::remove(const string &str) {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == JSON_OBJECT_TYPE) {
+        auto &json_object = std::get<JSONObject>(value);
+        return removeElement(json_object, str);
+    } else {
+        throw std::runtime_error("The object does not have removeElement() function");
+    }
+}
 
+bool JSON::remove(const char str[]) {
+    return this->remove(string(str));
+}
+
+bool popElement(JSONArray &json_array, size_t pos) {
+    if (pos < json_array.array_value.size()) {
+        json_array.array_value.erase(pos + json_array.array_value.begin());
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool JSON::pop(size_t pos) {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == JSON_ARRAY_TYPE) {
+        auto &json_array = std::get<JSONArray>(value);
+        return popElement(json_array, pos);
+    } else {
+        throw std::runtime_error("The object does not have popElement() function");
+    }
+}
 
 

@@ -19,11 +19,13 @@ int main() {
             "phone": "123-4567-8901"
         }
     })";
-    string text2 = R"(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])";
+    string text2 = R"([1,2,3,4,5,6,7,["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]])";
+
     JSON json_object1{text1};
-    JSON json_object2 = json_object1;     // 拷贝JSON对象
-    json_object2["city"] = "Shanghai";    // 修改键对应的值
-    json_object2["gender"] = "female";    // 添加键值对
+    JSON json_object2 = json_object1["contact"];  // JSON对象初始化
+    json_object2["phone"] = "999-999-999";        // 修改键对应的值
+    json_object2["gender"] = "female";      // 添加键值对
+    json_object2.remove("email");       // 删除键值对
     vector<string> keys1 = json_object1.keys();   // 获取json对象的键
     vector<string> keys2 = json_object2.keys();
     for (const auto &i: keys1) {
@@ -31,13 +33,17 @@ int main() {
     }
     cout << endl;
     cout << json_object2 << endl;
+    cout << json_object2.size() << endl;
+
 
     JSON json_array{text2};
-    JSON json_array2 = json_array;    // 拷贝JSON数组
-    json_array2[0] = "birthday";           // 修改键对应的值
-    json_array2.push_back("tomorrow");   // 添加值
+    JSON json_array2 = json_array[7];           // JSON数组初始化
+    json_array2[0] = "birthday";           		// 修改键对应的值
+    json_array2.push_back("tomorrow");    	// 添加值
+    json_array2.pop(1);         			// 删除元素
     cout << json_array << endl;
     cout << json_array2 << endl;
+    cout << json_array2.size() << endl;
 
     return 0;
 }
