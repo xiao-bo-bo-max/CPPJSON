@@ -1,0 +1,12 @@
+{
+        "name": "Alice",
+        "age": 30,
+        "city": "BeiJing",
+        "isStudent": false,
+        "height": 1.85,
+        "hobbies": ["reading", "swimming", "hiking"],
+        "contact": {
+            "email": "Alice@example.com",
+            "phone": "123-4567-8901"
+        }
+}

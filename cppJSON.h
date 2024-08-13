@@ -8,12 +8,14 @@
 #include <iostream>
 #include <variant>
 #include <algorithm>
+#include <regex>
 
 using std::string;
 using std::vector;
 using std::shared_ptr;
 using std::make_shared;
 using std::ostream;
+using std::istream;
 
 /* JSON值的类型 */
 # define STRING_TYPE 0
@@ -40,10 +42,9 @@ class BoolValue;
 
 class NULLValue;
 
-class JSONValue;
-
 class JSON;
 
+/* 重载 << 操作符 */
 ostream &operator<<(ostream &, const StringValue &);
 
 ostream &operator<<(ostream &, const IntValue &);
@@ -58,11 +59,14 @@ ostream &operator<<(ostream &, const JSONObject &);
 
 ostream &operator<<(ostream &, const JSONArray &);
 
-ostream &operator<<(ostream &, const JSONValue &);
+//ostream &operator<<(ostream &, const JSONValue &);
 
 ostream &operator<<(ostream &, const JSON &);
 
-shared_ptr<JSONValue> parse_value(const string &, size_t &pos);
+/* 重载 >> 操作符 */
+istream &operator>>(istream &, JSON &);
+
+shared_ptr<JSON> parse_value(const string &, size_t &pos);
 
 bool JSONisEmpty(const JSON &);
 
@@ -72,7 +76,7 @@ bool removeElement(JSONObject &json_object, const string &str);
 
 bool popElement(JSONArray &json_array, size_t pos);
 
-void JSONInitialization(JSON &, const JSONValue &);
+//void JSONInitialization(JSON &, const JSONValue &);
 
 class BaseValue {
 public:
@@ -85,7 +89,6 @@ public:
 protected:
     int value_type = -1;    // JSON值的类型
 };
-
 
 /* JSON值为整型 */
 class IntValue : public BaseValue {
@@ -175,11 +178,11 @@ public:
 
     vector<string> keys();
 
-    JSONValue &operator[](const string &);
+    JSON &operator[](const string &);
 
 private:
     vector<string> object_key;     // 保存JSON对象的键
-    vector<shared_ptr<JSONValue>> object_value;  // 保存JSON对象的值
+    vector<shared_ptr<JSON>> object_value;  // 保存JSON对象的值
 };
 
 /* JSON值为array类型 */
@@ -204,7 +207,7 @@ public:
 
     JSONArray &operator=(const JSONArray &cj);
 
-    JSONValue &operator[](const size_t &);
+    JSON &operator[](const int &);
 
     /* 将一个JSON值添加到JSON数组末尾 */
     template<typename T>
@@ -226,53 +229,76 @@ public:
 
     void push_back(std::nullptr_t value);
 
-    void push_back(const JSONValue &value);
-
     void push_back(const JSON &json);
 
 private:
-    vector<shared_ptr<JSONValue>> array_value;    // 保存JSON数组
+    vector<shared_ptr<JSON>> array_value;    // 保存JSON数组
 };
 
-class JSONValue {
-    friend shared_ptr<JSONValue> parse_value(const string &, size_t &pos);
+class JSON {
+    friend shared_ptr<JSON> parse_value(const string &, size_t &pos);
 
-    friend JSONValue &JSONObject::operator[](const std::string &);
-
-    friend ostream &operator<<(ostream &out, const JSONObject &json_object);
-
-    friend JSONValue &JSONArray::operator[](const size_t &);
+    friend ostream &operator<<(ostream &, const JSONObject &);
 
     friend ostream &operator<<(ostream &out, const JSONArray &json_array);
 
-    template<typename T>
-    friend void JSONArray::push_back(const T &);
+    friend ostream &operator<<(ostream &out, const JSON &json_value);
 
-    friend ostream &operator<<(ostream &out, const JSONValue &json_array);
+    friend istream &operator>>(istream &, JSON &);
 
-    friend void JSONInitialization(JSON &, const JSONValue &);
+    friend bool JSONisEmpty(const JSON &);
+
+    friend size_t JSONSize(const JSON &);
+
+    friend void JSONArray::push_back(const JSON &json);
 
 public:
-    /* 赋值运算符 */
-    JSONValue &operator=(const string &v);
+    /* 构造函数 */
+    explicit JSON(const string &str);
 
-    JSONValue &operator=(const char v[]);
+    explicit JSON(const char str[]) : JSON(string(str)) {}
 
-    JSONValue &operator=(const long double &v);
+    /* JSON对象和JSON数组共有的操作 */
+    bool empty() const;
 
-    JSONValue &operator=(const double &v);
+    size_t size();
 
-    JSONValue &operator=(const long long &v);
+    JSON &operator=(const string &v);
 
-    JSONValue &operator=(const int &v);
+    JSON &operator=(const char v[]);
 
-    JSONValue &operator=(const bool &v);
+    JSON &operator=(const long double &v);
 
-    JSONValue &operator=(std::nullptr_t v);
+    JSON &operator=(const double &v);
 
-    JSONValue &operator=(const JSONValue &json_value);
+    JSON &operator=(const long long &v);
 
-    JSONValue &operator=(const JSON &json);
+    JSON &operator=(const int &v);
+
+    JSON &operator=(const bool &v);
+
+    JSON &operator=(std::nullptr_t v);
+
+    JSON &operator=(const JSON &json);
+
+    /* JSON对象特有的操作 */
+    JSON &operator[](const string &);
+
+    JSON &operator[](const char str[]);
+
+    vector<string> keys();
+
+    bool remove(const string &str);
+
+    bool remove(const char str[]);
+
+    /* JSON数组特有的操作*/
+    JSON &operator[](const int &);
+
+    template<typename T>
+    void push_back(const T &);
+
+    bool pop(size_t pos);
 
     /* 类型转换 */
     operator string() const;
@@ -289,60 +315,10 @@ public:
             NULLValue
     >;
 
-    explicit JSONValue(const Value &v) : value(v) {}
+    explicit JSON(const Value &v) : value(v) {}
 
 private:
     Value value;
-};
-
-class JSON {
-    friend ostream &operator<<(ostream &out, const JSON &json_value);
-
-    friend bool JSONisEmpty(const JSON &);
-
-    friend size_t JSONSize(const JSON &);
-
-    friend void JSONArray::push_back(const JSON &value);
-
-    friend JSONValue &JSONValue::operator=(const JSON &json);
-
-    friend void JSONInitialization(JSON &, const JSONValue &);
-
-public:
-    /* 构造函数 */
-    explicit JSON(const string &str);
-
-    explicit JSON(const char str[]) : JSON(string(str)) {}
-
-    JSON(const JSONValue &);
-
-    JSON &operator=(const JSONValue &);
-
-    /* 成员函数 */
-    bool empty();
-
-    size_t size();
-
-
-    /* JSON对象特有的操作 */
-    JSONValue &operator[](const string &);
-
-    vector<string> keys();
-
-    bool remove(const string &str);
-
-    bool remove(const char str[]);
-
-    /* JSON数组特有的操作*/
-    JSONValue &operator[](const size_t &);
-
-    template<typename T>
-    void push_back(const T &);
-
-    bool pop(size_t pos);
-
-private:
-    std::variant<JSONObject, JSONArray> value;
 };
 
 template<typename T>

@@ -1,7 +1,7 @@
 #include "cppJSON.h"
 
 /* 分析json值的类型，返回值为指向用json值构造对应的对象的shared_ptr */
-shared_ptr<JSONValue> parse_value(const string &str, size_t &pos) {
+shared_ptr<JSON> parse_value(const string &str, size_t &pos) {
     while (isspace(str[pos]) || str[pos] == ',') ++pos;
     // 值为string类型
     if (str[pos] == '"') {
@@ -9,7 +9,7 @@ shared_ptr<JSONValue> parse_value(const string &str, size_t &pos) {
         size_t end = str.find('"', start);
         string value = str.substr(start, end - start);
         pos = end + 1;
-        return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<StringValue>, value));
+        return make_shared<JSON>(JSON::Value(std::in_place_type<StringValue>, value));
     }
         // 值为数字（整数或浮点数）类型
     else if (isdigit(str[pos]) || str[pos] == '-' || str[pos] == '+') {
@@ -17,22 +17,22 @@ shared_ptr<JSONValue> parse_value(const string &str, size_t &pos) {
         while (isdigit(str[pos]) || str[pos] == '.') ++pos;
         string value = str.substr(start, pos - start);
         if (value.find('.') == string::npos)
-            return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<IntValue>, stoll(value)));
+            return make_shared<JSON>(JSON::Value(std::in_place_type<IntValue>, stoll(value)));
         else
-            return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<FloatValue>, stod(value)));
+            return make_shared<JSON>(JSON::Value(std::in_place_type<FloatValue>, stold(value)));
     }
         // 值为布尔类型
     else if (str[pos] == 't' || str[pos] == 'f') {
         pos += (str[pos] == 't') ? 4 : 5;
         if (str[pos] == 't')
-            return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<BoolValue>, true));
+            return make_shared<JSON>(JSON::Value(std::in_place_type<BoolValue>, true));
         else
-            return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<BoolValue>, false));
+            return make_shared<JSON>(JSON::Value(std::in_place_type<BoolValue>, false));
     }
         // 值为null
     else if (str[pos] == 'n') {
         pos += 4;
-        return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<NULLValue>));
+        return make_shared<JSON>(JSON::Value(std::in_place_type<NULLValue>));
     }
         // 值为json数组类型
     else if (str[pos] == '[') {
@@ -45,7 +45,7 @@ shared_ptr<JSONValue> parse_value(const string &str, size_t &pos) {
             ++pos;
         }
         string json_str = str.substr(start, pos - start);
-        return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<JSONArray>, json_str));
+        return make_shared<JSON>(JSON::Value(std::in_place_type<JSONArray>, json_str));
     }
         // 值为json对象类型
     else if (str[pos] == '{') {
@@ -58,7 +58,7 @@ shared_ptr<JSONValue> parse_value(const string &str, size_t &pos) {
             ++pos;
         }
         string json_str = str.substr(start, pos - start);
-        return make_shared<JSONValue>(JSONValue::Value(std::in_place_type<JSONObject>, json_str));
+        return make_shared<JSON>(JSON::Value(std::in_place_type<JSONObject>, json_str));
     }
     throw std::runtime_error("Unqualified JSON value");
 }
@@ -93,7 +93,7 @@ JSONObject &JSONObject::operator=(const JSONObject &json_object) {
     this->object_value.clear();
     this->object_key = json_object.object_key;
     for (const auto &i: json_object.object_value) {
-        this->object_value.push_back(make_shared<JSONValue>(*i));
+        this->object_value.push_back(make_shared<JSON>(*i));
     }
     return *this;
 }
@@ -119,13 +119,13 @@ ostream &operator<<(ostream &out, const JSONObject &json_object) {
     return out;
 }
 
-JSONValue &JSONObject::operator[](const string &key) {
+JSON &JSONObject::operator[](const string &key) {
     auto pos = std::find(object_key.begin(), object_key.end(), key);
     if (pos != object_key.end()) {
         return *object_value[pos - object_key.begin()];
     } else {
         object_key.push_back(key);
-        object_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<NULLValue>)));
+        object_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<NULLValue>)));
         return *object_value[object_value.size() - 1];
     }
 }
@@ -152,59 +152,41 @@ JSONArray::JSONArray(const JSONArray &cj) : BaseValue(cj.value_type) {
 JSONArray &JSONArray::operator=(const JSONArray &cj) {
     this->array_value.clear();
     for (const auto &i: cj.array_value) {
-        this->array_value.push_back(make_shared<JSONValue>(*i));
+        this->array_value.push_back(make_shared<JSON>(*i));
     }
     return *this;
 }
 
-void JSONArray::push_back(const string &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<StringValue>, value)));
-}
-
 void JSONArray::push_back(const char value[]) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<StringValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<StringValue>, value)));
 }
 
 void JSONArray::push_back(const long double &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<FloatValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<FloatValue>, value)));
 }
 
 void JSONArray::push_back(const double &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<FloatValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<FloatValue>, value)));
 }
 
 void JSONArray::push_back(const long long &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<IntValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<IntValue>, value)));
 }
 
 void JSONArray::push_back(const int &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<IntValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<IntValue>, value)));
 }
 
 void JSONArray::push_back(const bool &value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<BoolValue>, value)));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<BoolValue>, value)));
 }
 
 void JSONArray::push_back(std::nullptr_t value) {
-    array_value.push_back(make_shared<JSONValue>(JSONValue::Value(std::in_place_type<NULLValue>)));
-}
-
-void JSONArray::push_back(const JSONValue &value) {
-    array_value.push_back(make_shared<JSONValue>(value));
+    array_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<NULLValue>)));
 }
 
 void JSONArray::push_back(const JSON &json) {
-    std::visit([this](const auto &v) {
-        switch (v.valueType()) {
-            case JSON_OBJECT_TYPE:
-            case JSON_ARRAY_TYPE:
-                this->array_value.push_back(make_shared<JSONValue>(JSONValue::Value(v)));
-                break;
-            default: {
-                throw std::runtime_error("Unrecognized json class");
-            }
-        }
-    }, json.value);
+    array_value.push_back(make_shared<JSON>(json));
 }
 
 ostream &operator<<(ostream &out, const JSONArray &json_array) {
@@ -222,8 +204,8 @@ ostream &operator<<(ostream &out, const JSONArray &json_array) {
     return out;
 }
 
-JSONValue &JSONArray::operator[](const size_t &pos) {
-    if (pos < array_value.size()) {
+JSON &JSONArray::operator[](const int &pos) {
+    if (pos > -1 && pos < array_value.size()) {
         return *array_value[pos];
     } else {
         throw std::out_of_range("Index out of range");
@@ -258,105 +240,6 @@ ostream &operator<<(ostream &out, const NULLValue &null_value) {
     return out;
 }
 
-ostream &operator<<(ostream &out, const JSONValue &json_value) {
-    std::visit([&out](const auto &v) {
-        out << v;
-    }, json_value.value);
-    return out;
-}
-
-JSONValue &JSONValue::operator=(const string &v) {
-    value.emplace<StringValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const char v[]) {
-    value.emplace<StringValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const long double &v) {
-    value.emplace<FloatValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const double &v) {
-    value.emplace<FloatValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const long long &v) {
-    value.emplace<IntValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const int &v) {
-    value.emplace<IntValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const bool &v) {
-    value.emplace<BoolValue>(v);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(std::nullptr_t v) {
-    value.emplace<NULLValue>();
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const JSONValue &json_value) {
-    std::visit([&json_value, this](const auto &v) {
-        switch (v.valueType()) {
-            case STRING_TYPE: {
-                this->value.emplace<StringValue>(std::get<StringValue>(json_value.value));
-                break;
-            }
-            case INT_TYPE: {
-                this->value.emplace<IntValue>(std::get<IntValue>(json_value.value));
-                break;
-            }
-            case FLOAT_TYPE: {
-                this->value.emplace<FloatValue>(std::get<FloatValue>(json_value.value));
-                break;
-            }
-            case BOOL_TYPE: {
-                this->value.emplace<BoolValue>(std::get<BoolValue>(json_value.value));
-                break;
-            }
-            case NULL_TYPE: {
-                this->value.emplace<NULLValue>();
-                break;
-            }
-            case JSON_OBJECT_TYPE: {
-                this->value.emplace<JSONObject>(std::get<JSONObject>(json_value.value));
-                break;
-            }
-            case JSON_ARRAY_TYPE: {
-                this->value.emplace<JSONArray>(std::get<JSONArray>(json_value.value));
-                break;
-            }
-            default:
-                throw std::runtime_error("Unrecognized json_value class");
-        }
-    }, json_value.value);
-    return *this;
-}
-
-JSONValue &JSONValue::operator=(const JSON &json) {
-    std::visit([this](const auto &v) {
-        switch (v.valueType()) {
-            case JSON_OBJECT_TYPE:
-            case JSON_ARRAY_TYPE:
-                this->value = JSONValue::Value(v);
-                break;
-            default:
-                throw std::runtime_error("Unrecognized json_value class");
-        }
-    }, json.value);
-    return *this;
-}
-
 
 JSON::JSON(const string &str) : value(std::in_place_type<JSONObject>, "{}") {
     size_t pos = 0;
@@ -370,29 +253,6 @@ JSON::JSON(const string &str) : value(std::in_place_type<JSONObject>, "{}") {
     }
 }
 
-void JSONInitialization(JSON &json, const JSONValue &json_value) {
-    int type = std::visit([](const auto &v) -> int {
-        return v.valueType();
-    }, json_value.value);
-    if (type == JSON_OBJECT_TYPE) {
-        const auto &json_object = std::get<JSONObject>(json_value.value);
-        json.value = json_object;
-    } else if (type == JSON_ARRAY_TYPE) {
-        const auto &json_array = std::get<JSONArray>(json_value.value);
-        json.value = json_array;
-    } else
-        throw std::runtime_error("Cannot initialize JSON objects with this type");
-}
-
-JSON::JSON(const JSONValue &json_value) : value(std::in_place_type<JSONObject>, "{}") {
-    JSONInitialization(*this, json_value);
-}
-
-JSON &JSON::operator=(const JSONValue &json_value) {
-    JSONInitialization(*this, json_value);
-    return *this;
-}
-
 ostream &operator<<(ostream &out, const JSON &json) {
     std::visit([&out](const auto &v) {
         out << v;
@@ -400,8 +260,28 @@ ostream &operator<<(ostream &out, const JSON &json) {
     return out;
 }
 
-JSONValue &JSON::operator[](const string &key) {
-    return std::visit([this, key](const auto &v) -> JSONValue & {
+istream &operator>>(istream &in, JSON &json) {
+    // 正则表达式匹配整数（包括可选的正负号）
+    std::regex int_regex("^[+-]?\\d+$");
+    // 正则表达式匹配浮点数（包括可选的正负号）
+    std::regex float_regex("^[+-]?\\d*\\.\\d+$");
+    string input(string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
+    if (std::regex_match(input, int_regex)) {
+        json = stoll(input);
+    } else if (std::regex_match(input, float_regex)) {
+        json = stold(input);
+    } else {
+        try {
+            json = JSON(input);
+        } catch (const std::runtime_error &e) {
+            json = input;
+        }
+    }
+    return in;
+}
+
+JSON &JSON::operator[](const string &key) {
+    return std::visit([this, key](const auto &v) -> JSON & {
         if (v.valueType() == JSON_OBJECT_TYPE) {
             auto &json_object = std::get<JSONObject>(this->value);
             return json_object[key];
@@ -411,8 +291,12 @@ JSONValue &JSON::operator[](const string &key) {
     }, value);
 }
 
-JSONValue &JSON::operator[](const size_t &pos) {
-    return std::visit([this, pos](const auto &v) -> JSONValue & {
+JSON &JSON::operator[](const char str[]) {
+    return this->operator[](string(str));
+}
+
+JSON &JSON::operator[](const int &pos) {
+    return std::visit([this, pos](const auto &v) -> JSON & {
         if (v.valueType() == JSON_ARRAY_TYPE) {
             auto &json_array = std::get<JSONArray>(this->value);
             return json_array[pos];
@@ -467,7 +351,7 @@ size_t JSONSize(const JSON &json) {
         throw std::runtime_error("Unrecognized type");
 }
 
-bool JSON::empty() {
+bool JSON::empty() const {
     return JSONisEmpty(*this);
 }
 
@@ -475,7 +359,85 @@ size_t JSON::size() {
     return JSONSize(*this);
 }
 
-JSONValue::operator string() const {
+JSON &JSON::operator=(const string &v) {
+    value.emplace<StringValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const char v[]) {
+    value.emplace<StringValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const long double &v) {
+    value.emplace<FloatValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const double &v) {
+    value.emplace<FloatValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const long long &v) {
+    value.emplace<IntValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const int &v) {
+    value.emplace<IntValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(const bool &v) {
+    value.emplace<BoolValue>(v);
+    return *this;
+}
+
+JSON &JSON::operator=(std::nullptr_t v) {
+    value.emplace<NULLValue>();
+    return *this;
+}
+
+JSON &JSON::operator=(const JSON &json) {
+    std::visit([&json, this](const auto &v) {
+        switch (v.valueType()) {
+            case STRING_TYPE: {
+                this->value.emplace<StringValue>(std::get<StringValue>(json.value));
+                break;
+            }
+            case INT_TYPE: {
+                this->value.emplace<IntValue>(std::get<IntValue>(json.value));
+                break;
+            }
+            case FLOAT_TYPE: {
+                this->value.emplace<FloatValue>(std::get<FloatValue>(json.value));
+                break;
+            }
+            case BOOL_TYPE: {
+                this->value.emplace<BoolValue>(std::get<BoolValue>(json.value));
+                break;
+            }
+            case NULL_TYPE: {
+                this->value.emplace<NULLValue>();
+                break;
+            }
+            case JSON_OBJECT_TYPE: {
+                this->value.emplace<JSONObject>(std::get<JSONObject>(json.value));
+                break;
+            }
+            case JSON_ARRAY_TYPE: {
+                this->value.emplace<JSONArray>(std::get<JSONArray>(json.value));
+                break;
+            }
+            default:
+                throw std::runtime_error("Unrecognized json_value class");
+        }
+    }, json.value);
+    return *this;
+}
+
+JSON::operator string() const {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
     }, value);
@@ -486,7 +448,7 @@ JSONValue::operator string() const {
     }
 }
 
-JSONValue::operator long double() const {
+JSON::operator long double() const {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
     }, value);
@@ -545,5 +507,3 @@ bool JSON::pop(size_t pos) {
         throw std::runtime_error("The object does not have popElement() function");
     }
 }
-
-
