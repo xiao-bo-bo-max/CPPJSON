@@ -11,7 +11,7 @@ shared_ptr<JSON> parse_value(const string &str, size_t &pos) {
         pos = end + 1;
         return make_shared<JSON>(JSON::Value(std::in_place_type<StringValue>, value));
     }
-        // 值为数字（整数或浮点数）类型
+    // 值为数字（整数或浮点数）类型
     else if (isdigit(str[pos]) || str[pos] == '-' || str[pos] == '+') {
         size_t start = pos;
         while (isdigit(str[pos]) || str[pos] == '.') ++pos;
@@ -21,20 +21,22 @@ shared_ptr<JSON> parse_value(const string &str, size_t &pos) {
         else
             return make_shared<JSON>(JSON::Value(std::in_place_type<FloatValue>, stold(value)));
     }
-        // 值为布尔类型
+    // 值为布尔类型
     else if (str[pos] == 't' || str[pos] == 'f') {
-        pos += (str[pos] == 't') ? 4 : 5;
-        if (str[pos] == 't')
+        if (str[pos] == 't') {
+            pos += 4;
             return make_shared<JSON>(JSON::Value(std::in_place_type<BoolValue>, true));
-        else
+        } else if (str[pos] == 'f') {
+            pos += 5;
             return make_shared<JSON>(JSON::Value(std::in_place_type<BoolValue>, false));
+        }
     }
-        // 值为null
+    // 值为null
     else if (str[pos] == 'n') {
         pos += 4;
         return make_shared<JSON>(JSON::Value(std::in_place_type<NULLValue>));
     }
-        // 值为json数组类型
+    // 值为json数组类型
     else if (str[pos] == '[') {
         size_t start = pos;
         int braces = 1;
@@ -47,7 +49,7 @@ shared_ptr<JSON> parse_value(const string &str, size_t &pos) {
         string json_str = str.substr(start, pos - start);
         return make_shared<JSON>(JSON::Value(std::in_place_type<JSONArray>, json_str));
     }
-        // 值为json对象类型
+    // 值为json对象类型
     else if (str[pos] == '{') {
         size_t start = pos;
         int braces = 1;
@@ -128,6 +130,22 @@ JSON &JSONObject::operator[](const string &key) {
         object_value.push_back(make_shared<JSON>(JSON::Value(std::in_place_type<NULLValue>)));
         return *object_value[object_value.size() - 1];
     }
+}
+
+JSON &JSONObject::at(const string &key) {
+    auto pos = std::find(object_key.begin(), object_key.end(), key);
+    if (pos != object_key.end()) {
+        return *object_value[pos - object_key.begin()];
+    } else {
+        throw std::out_of_range("The key does not exist");
+    }
+}
+
+JSONObject &JSONObject::merge(const JSONObject &json_object) {
+    this->object_key.insert(this->object_key.end(), json_object.object_key.begin(), json_object.object_key.end());
+    this->object_value.insert(this->object_value.end(), json_object.object_value.begin(),
+                              json_object.object_value.end());
+    return *this;
 }
 
 /* 解析一个json字符串，将值存储在数据成员中 */
@@ -295,6 +313,21 @@ JSON &JSON::operator[](const char str[]) {
     return this->operator[](string(str));
 }
 
+JSON &JSON::at(const string &key) {
+    return std::visit([this, key](const auto &v) -> JSON & {
+        if (v.valueType() == JSON_OBJECT_TYPE) {
+            auto &json_object = std::get<JSONObject>(this->value);
+            return json_object.at(key);
+        } else {
+            throw std::runtime_error("This object cannot be indexed with a string");
+        }
+    }, value);
+}
+
+JSON &JSON::at(const char str[]) {
+    return this->at(string(str));
+}
+
 JSON &JSON::operator[](const int &pos) {
     return std::visit([this, pos](const auto &v) -> JSON & {
         if (v.valueType() == JSON_ARRAY_TYPE) {
@@ -355,7 +388,7 @@ bool JSON::empty() const {
     return JSONisEmpty(*this);
 }
 
-size_t JSON::size() {
+size_t JSON::size() const {
     return JSONSize(*this);
 }
 
@@ -448,6 +481,28 @@ JSON::operator string() const {
     }
 }
 
+JSON::operator int() const {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == INT_TYPE) {
+        return static_cast<int>(std::get<IntValue>(value));
+    } else {
+        throw std::runtime_error("Cannot convert to int type");
+    }
+}
+
+JSON::operator long long() const {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == INT_TYPE) {
+        return static_cast<long long>(std::get<IntValue>(value));
+    } else {
+        throw std::runtime_error("Cannot convert to long long type");
+    }
+}
+
 JSON::operator long double() const {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
@@ -459,10 +514,32 @@ JSON::operator long double() const {
     }
 }
 
+JSON::operator double() const {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == FLOAT_TYPE) {
+        return static_cast<double>(std::get<FloatValue>(value));
+    } else {
+        throw std::runtime_error("Cannot convert to double type");
+    }
+}
+
+JSON::operator bool() const {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    if (type == BOOL_TYPE) {
+        return static_cast<bool >(std::get<BoolValue>(value));
+    } else {
+        throw std::runtime_error("Cannot convert to bool type");
+    }
+}
+
 bool removeElement(JSONObject &json_object, const string &str) {
     auto it = std::find(json_object.object_key.begin(), json_object.object_key.end(), str);
     if (it != json_object.object_key.end()) {
-        size_t pos = it - json_object.object_key.begin();
+        long long pos = it - json_object.object_key.begin();
         json_object.object_key.erase(pos + json_object.object_key.begin());
         json_object.object_value.erase(pos + json_object.object_value.begin());
         return true;
@@ -487,7 +564,7 @@ bool JSON::remove(const char str[]) {
     return this->remove(string(str));
 }
 
-bool popElement(JSONArray &json_array, size_t pos) {
+bool popElement(JSONArray &json_array, int pos) {
     if (pos < json_array.array_value.size()) {
         json_array.array_value.erase(pos + json_array.array_value.begin());
         return true;
@@ -496,7 +573,7 @@ bool popElement(JSONArray &json_array, size_t pos) {
     }
 }
 
-bool JSON::pop(size_t pos) {
+bool JSON::pop(int pos) {
     int type = std::visit([](const auto &v) -> int {
         return v.valueType();
     }, value);
@@ -506,4 +583,67 @@ bool JSON::pop(size_t pos) {
     } else {
         throw std::runtime_error("The object does not have popElement() function");
     }
+}
+
+bool JSON::isString() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == STRING_TYPE ? true : false;
+}
+
+bool JSON::isInteger() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == INT_TYPE ? true : false;
+}
+
+bool JSON::isFloat() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == FLOAT_TYPE ? true : false;
+}
+
+bool JSON::isBool() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == BOOL_TYPE ? true : false;
+}
+
+bool JSON::isNULL() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == NULL_TYPE ? true : false;
+}
+
+bool JSON::isJSONObject() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == JSON_OBJECT_TYPE ? true : false;
+}
+
+bool JSON::isJSONArray() {
+    int type = std::visit([](const auto &v) -> int {
+        return v.valueType();
+    }, value);
+    return type == JSON_ARRAY_TYPE ? true : false;
+}
+
+bool operator==(const JSON &json1, const JSON &json2) {
+    std::ostringstream json_ostrm1, json_ostrm2;
+    json_ostrm1 << json1;
+    json_ostrm2 << json2;
+    if (json_ostrm1.str() == json_ostrm2.str())
+        return true;
+    else
+        return false;
+}
+
+bool operator!=(const JSON &json1, const JSON &json2) {
+    return json1 == json2 ? false : true;
 }

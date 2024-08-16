@@ -59,12 +59,15 @@ ostream &operator<<(ostream &, const JSONObject &);
 
 ostream &operator<<(ostream &, const JSONArray &);
 
-//ostream &operator<<(ostream &, const JSONValue &);
-
 ostream &operator<<(ostream &, const JSON &);
 
 /* 重载 >> 操作符 */
 istream &operator>>(istream &, JSON &);
+
+/* 重载相等运算符 */
+bool operator==(const JSON &, const JSON &);
+
+bool operator!=(const JSON &, const JSON &);
 
 shared_ptr<JSON> parse_value(const string &, size_t &pos);
 
@@ -74,9 +77,7 @@ size_t JSONSize(const JSON &);
 
 bool removeElement(JSONObject &json_object, const string &str);
 
-bool popElement(JSONArray &json_array, size_t pos);
-
-//void JSONInitialization(JSON &, const JSONValue &);
+bool popElement(JSONArray &json_array, int pos);
 
 class BaseValue {
 public:
@@ -99,6 +100,8 @@ public:
 
     explicit operator long long() const { return value; }
 
+    explicit operator int() const { return static_cast<int>(value); }
+
 private:
     long long value;
 
@@ -112,6 +115,8 @@ public:
     explicit FloatValue(const long double &v) : BaseValue(FLOAT_TYPE), value(v) {}
 
     explicit operator long double() const { return value; }
+
+    explicit operator double() const { return static_cast<double>(value); }
 
 private:
     long double value;
@@ -180,6 +185,10 @@ public:
 
     JSON &operator[](const string &);
 
+    JSON &at(const string &);
+
+    JSONObject &merge(const JSONObject &);
+
 private:
     vector<string> object_key;     // 保存JSON对象的键
     vector<shared_ptr<JSON>> object_value;  // 保存JSON对象的值
@@ -194,7 +203,7 @@ class JSONArray : public BaseValue {
 
     friend size_t JSONSize(const JSON &);
 
-    friend bool popElement(JSONArray &json_array, size_t pos);
+    friend bool popElement(JSONArray &json_array, int pos);
 
 public:
     /* 构造函数 */
@@ -252,6 +261,10 @@ class JSON {
 
     friend void JSONArray::push_back(const JSON &json);
 
+    friend bool operator==(const JSON &, const JSON &);
+
+    friend bool operator!=(const JSON &, const JSON &);
+
 public:
     /* 构造函数 */
     explicit JSON(const string &str);
@@ -261,7 +274,7 @@ public:
     /* JSON对象和JSON数组共有的操作 */
     bool empty() const;
 
-    size_t size();
+    size_t size() const;
 
     JSON &operator=(const string &v);
 
@@ -286,11 +299,18 @@ public:
 
     JSON &operator[](const char str[]);
 
+    JSON &at(const string &);
+
+    JSON &at(const char str[]);
+
     vector<string> keys();
 
     bool remove(const string &str);
 
     bool remove(const char str[]);
+
+    template<typename ...args>
+    JSON &merge(const args &... json_list);
 
     /* JSON数组特有的操作*/
     JSON &operator[](const int &);
@@ -298,12 +318,35 @@ public:
     template<typename T>
     void push_back(const T &);
 
-    bool pop(size_t pos);
+    bool pop(int pos);
 
     /* 类型转换 */
-    operator string() const;
+    explicit operator string() const;
 
-    operator long double() const;
+    explicit operator int() const;
+
+    explicit operator long long() const;
+
+    explicit operator long double() const;
+
+    explicit operator double() const;
+
+    explicit operator bool() const;
+
+    /* 类型检查 */
+    bool isString();
+
+    bool isInteger();
+
+    bool isFloat();
+
+    bool isBool();
+
+    bool isNULL();
+
+    bool isJSONObject();
+
+    bool isJSONArray();
 
     using Value = std::variant<
             JSONObject,
@@ -336,6 +379,18 @@ void JSON::push_back(const T &v) {
     } else {
         throw std::runtime_error("The object does not have keys() function");
     }
+}
+
+template<typename ...args>
+JSON &JSON::merge(const args &... json_list) {
+    ([json_list, this]() {
+        if (std::is_same<typename std::decay<decltype(json_list)>::type, JSON>::value) {
+            std::get<JSONObject>(this->value).merge(std::get<JSONObject>(json_list.value));
+        } else {
+            throw std::runtime_error("Cannot add this variable to the JSON object");
+        }
+    }(), ...);
+    return *this;
 }
 
 #endif //CPPJSON_CPPJSON_H
