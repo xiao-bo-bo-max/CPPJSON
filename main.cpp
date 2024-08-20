@@ -56,7 +56,6 @@ int main() {
     istrm >> json_array1[0];
     JSON json_array2 = json_array1[7];          // JSON数组初始化
     JSON json_array3 = json_array1[7];          // JSON数组初始化
-    json_object3.merge(json_array1,json_object2);
     json_array2[0] = json_array1[7][6];         // 修改键对应的值
     json_array2.push_back("tomorrow");       // 添加值
     json_array2.pop(1);                    // 删除元素

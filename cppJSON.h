@@ -64,13 +64,15 @@ ostream &operator<<(ostream &, const JSON &);
 /* 重载 >> 操作符 */
 istream &operator>>(istream &, JSON &);
 
-/* 重载相等运算符 */
+/* 重载相等和不等操作符 */
 bool operator==(const JSON &, const JSON &);
 
 bool operator!=(const JSON &, const JSON &);
 
+// 解析JSON值的辅助函数
 shared_ptr<JSON> parse_value(const string &, size_t &pos);
 
+// JSON辅助函数
 bool JSONisEmpty(const JSON &);
 
 size_t JSONSize(const JSON &);
@@ -79,6 +81,7 @@ bool removeElement(JSONObject &json_object, const string &str);
 
 bool popElement(JSONArray &json_array, int pos);
 
+// JSON值的基类
 class BaseValue {
 public:
     explicit BaseValue(int t) : value_type(t) {};
@@ -91,7 +94,7 @@ protected:
     int value_type = -1;    // JSON值的类型
 };
 
-/* JSON值为整型 */
+/* JSON整数值类 */
 class IntValue : public BaseValue {
     friend ostream &operator<<(ostream &, const IntValue &);
 
@@ -107,7 +110,7 @@ private:
 
 };
 
-/* JSON值为浮点型 */
+/* JSON浮点值类 */
 class FloatValue : public BaseValue {
     friend ostream &operator<<(ostream &, const FloatValue &);
 
@@ -123,7 +126,7 @@ private:
 
 };
 
-/* JSON值为字符串类型 */
+/* JSON字符串值类 */
 class StringValue : public BaseValue {
     friend ostream &operator<<(ostream &, const StringValue &);
 
@@ -138,7 +141,7 @@ private:
     string value;
 };
 
-/* JSON值为布尔类型 */
+/* JSON布尔值类 */
 class BoolValue : public BaseValue {
     friend ostream &operator<<(ostream &, const BoolValue &);
 
@@ -151,7 +154,7 @@ private:
     bool value;
 };
 
-/* JSON值为NULL类型 */
+/* JSON NULL值类 */
 class NULLValue : public BaseValue {
     friend ostream &operator<<(ostream &, const NULLValue &);
 
@@ -159,7 +162,7 @@ public:
     NULLValue() : BaseValue(NULL_TYPE) {}
 };
 
-/* JSON值为object类型 */
+/* JSON对象类 */
 class JSONObject : public BaseValue {
     /* 友元函数 */
     friend ostream &operator<<(ostream &, const JSONObject &);
@@ -194,7 +197,7 @@ private:
     vector<shared_ptr<JSON>> object_value;  // 保存JSON对象的值
 };
 
-/* JSON值为array类型 */
+/* JSON数组类 */
 class JSONArray : public BaseValue {
     /* 友元函数 */
     friend bool JSONisEmpty(const JSON &);
@@ -244,6 +247,7 @@ private:
     vector<shared_ptr<JSON>> array_value;    // 保存JSON数组
 };
 
+/* 主JSON类 */
 class JSON {
     friend shared_ptr<JSON> parse_value(const string &, size_t &pos);
 
@@ -271,11 +275,12 @@ public:
 
     explicit JSON(const char str[]) : JSON(string(str)) {}
 
-    /* JSON对象和JSON数组共有的操作 */
+    // 通用操作
     bool empty() const;
 
     size_t size() const;
 
+    // 赋值操作符
     JSON &operator=(const string &v);
 
     JSON &operator=(const char v[]);
@@ -294,7 +299,35 @@ public:
 
     JSON &operator=(const JSON &json);
 
-    /* JSON对象特有的操作 */
+    // 类型转换
+    explicit operator string() const;
+
+    explicit operator int() const;
+
+    explicit operator long long() const;
+
+    explicit operator long double() const;
+
+    explicit operator double() const;
+
+    explicit operator bool() const;
+
+    // 类型检查
+    bool isString();
+
+    bool isInteger();
+
+    bool isFloat();
+
+    bool isBool();
+
+    bool isNULL();
+
+    bool isJSONObject();
+
+    bool isJSONArray();
+
+    // JSON对象操作
     JSON &operator[](const string &);
 
     JSON &operator[](const char str[]);
@@ -312,7 +345,7 @@ public:
     template<typename ...args>
     JSON &merge(const args &... json_list);
 
-    /* JSON数组特有的操作*/
+    // JSON数组操作
     JSON &operator[](const int &);
 
     template<typename T>
@@ -320,34 +353,7 @@ public:
 
     bool pop(int pos);
 
-    /* 类型转换 */
-    explicit operator string() const;
-
-    explicit operator int() const;
-
-    explicit operator long long() const;
-
-    explicit operator long double() const;
-
-    explicit operator double() const;
-
-    explicit operator bool() const;
-
-    /* 类型检查 */
-    bool isString();
-
-    bool isInteger();
-
-    bool isFloat();
-
-    bool isBool();
-
-    bool isNULL();
-
-    bool isJSONObject();
-
-    bool isJSONArray();
-
+    // 使用std::variant来存储不同类型的JSON值
     using Value = std::variant<
             JSONObject,
             JSONArray,
@@ -364,6 +370,7 @@ private:
     Value value;
 };
 
+// 模板函数实现
 template<typename T>
 void JSONArray::push_back(const T &value) {
     throw std::runtime_error("Unqualified JSON value");
@@ -385,7 +392,14 @@ template<typename ...args>
 JSON &JSON::merge(const args &... json_list) {
     ([json_list, this]() {
         if (std::is_same<typename std::decay<decltype(json_list)>::type, JSON>::value) {
-            std::get<JSONObject>(this->value).merge(std::get<JSONObject>(json_list.value));
+            int type = std::visit([](const auto &v) -> int {
+                return v.valueType();
+            }, json_list.value);
+            if (type == JSON_OBJECT_TYPE) {
+                std::get<JSONObject>(this->value).merge(std::get<JSONObject>(json_list.value));
+            } else {
+                throw std::runtime_error("Cannot add JSONArray to the JSON object");
+            }
         } else {
             throw std::runtime_error("Cannot add this variable to the JSON object");
         }
