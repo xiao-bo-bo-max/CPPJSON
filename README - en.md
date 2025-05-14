@@ -9,26 +9,26 @@ CPPJSON is a lightweight and efficient C++ JSON parsing library. It allows devel
 ## Functional Description
 
 1.  **Parse JSON Data**:
-      * Supports direct parsing from JSON-formatted strings.
-      * Supports reading and parsing JSON data from file streams (`std::ifstream`).
-      * Capable of handling nested JSON objects and JSON arrays.
+	  * Supports direct parsing from JSON-formatted strings.
+	  * Supports reading and parsing JSON data from file streams (`std::ifstream`).
+	  * Capable of handling nested JSON objects and JSON arrays.
 2.  **Data Manipulation**:
-      * **Access & Modification**: Conveniently access and modify data via keys (for JSON objects) or indices (for JSON arrays).
-      * **Add Elements**: Add new key-value pairs to JSON objects or append elements to JSON arrays.
-      * **Delete Elements**: Remove specified key-value pairs from JSON objects or delete elements at specified positions in JSON arrays.
-      * **Get Key Collection**: Retrieve all keys from a JSON object.
+	  * **Access & Modification**: Conveniently access and modify data via keys (for JSON objects) or indices (for JSON arrays).
+	  * **Add Elements**: Add new key-value pairs to JSON objects or append elements to JSON arrays.
+	  * **Delete Elements**: Remove specified key-value pairs from JSON objects or delete elements at specified positions in JSON arrays.
+	  * **Get Key Collection**: Retrieve all keys from a JSON object.
 3.  **Object Management**:
-      * **Copying**: Supports deep copying of JSON objects (via copy constructor and copy assignment operator).
-      * **Merging**: Supports merging one or more JSON objects into the current JSON object (currently implemented as an append of key-value pairs).
+	  * **Copying**: Supports deep copying of JSON objects (via copy constructor and copy assignment operator).
+	  * **Merging**: Supports merging one or more JSON objects into the current JSON object (currently implemented as an append of key-value pairs).
 4.  **Type Support & Checking**:
-      * Supports common JSON data types: string, integer, floating-point number, boolean, null, JSON object, and JSON array.
-      * Provides type-checking methods (e.g., `isString()`, `isInteger()`, `isJSONObject()`).
-      * Supports explicit type conversion to corresponding C++ types (e.g., `static_cast<std::string>(json_value)`).
+	  * Supports common JSON data types: string, integer, floating-point number, boolean, null, JSON object, and JSON array.
+	  * Provides type-checking methods (e.g., `isString()`, `isInteger()`, `isJSONObject()`).
+	  * Supports explicit type conversion to corresponding C++ types (e.g., `static_cast<std::string>(json_value)`).
 5.  **Serialization**:
-      * Supports printing (serializing) JSON objects or arrays to an output stream (`std::ostream`), such as the console or a file.
+	  * Supports printing (serializing) JSON objects or arrays to an output stream (`std::ostream`), such as the console or a file.
 6.  **Convenience Operations**:
-      * Check if a JSON object or array is empty (`empty()`).
-      * Get the size of a JSON object or array (`size()`).
+	  * Check if a JSON object or array is empty (`empty()`).
+	  * Get the size of a JSON object or array (`size()`).
 
 ## Applied Technologies
 
@@ -39,13 +39,13 @@ The implementation of CPPJSON primarily relies on the following C++ features:
   * **Classes and Inheritance**: Defines `BaseValue` as the base class for all JSON value types, deriving specific types like `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`, `JSONObject`, and `JSONArray`. Uses virtual functions and polymorphism.
   * **Smart Pointers**: Extensive use of `std::shared_ptr` to manage the lifecycle of dynamically allocated JSON value objects, simplifying memory management.
   * **STL Containers**:
-      * `std::vector<std::string>` for storing keys of `JSONObject`.
-      * `std::vector<std::shared_ptr<JSON>>` for storing values of `JSONObject` and elements of `JSONArray`.
+	* `std::vector<std::string>` for storing keys of `JSONObject`.
+	* `std::vector<std::shared_ptr<JSON>>` for storing values of `JSONObject` and elements of `JSONArray`.
   * **Operator Overloading**:
-      * Input/output stream operators (`<<`, `>>`) for serialization and deserialization.
-      * Subscript operator (`[]`) for accessing object and array elements.
-      * Assignment operator (`=`) for assigning different types of values to `JSON` objects.
-      * Comparison operators (`==`, `!=`) for comparing two `JSON` objects for equality.
+	* Input/output stream operators (`<<`, `>>`) for serialization and deserialization.
+	* Subscript operator (`[]`) for accessing object and array elements.
+	* Assignment operator (`=`) for assigning different types of values to `JSON` objects.
+	* Comparison operators (`==`, `!=`) for comparing two `JSON` objects for equality.
   * **Type Conversion**: Uses the `explicit` keyword to define type conversion operators, preventing unexpected implicit conversions.
   * **Exception Handling**: Uses `std::runtime_error` and `std::out_of_range` exceptions to report parsing errors or runtime errors.
   * **Rvalue References and Move Semantics**: Although not prominent in the provided code snippets, modern C++ libraries typically consider these for performance improvements.
@@ -68,20 +68,20 @@ The core of the CPPJSON library is the `JSON` class, which acts as a unified int
 
   * **`BaseValue` Class**: This is an abstract base class defining a common interface for all JSON value types, primarily the `valueType()` method, which returns the specific type of the value (using predefined macros like `STRING_TYPE`, `JSON_OBJECT_TYPE`, etc.).
   * **Concrete Value Classes**:
-      * `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`: These classes inherit directly from `BaseValue` and store the corresponding raw C++ type data. They provide explicit conversion operators to their internally stored types.
-      * `JSONObject`: Represents a JSON object. Internally, it uses two `std::vector`s: one to store keys (`std::string`) and another to store corresponding values (`std::shared_ptr<JSON>`). This allows the value of a JSON object to itself be a `JSON` object (thus supporting nesting).
-      * `JSONArray`: Represents a JSON array. Internally, it uses a `std::vector<std::shared_ptr<JSON>>` to store its elements, also supporting nesting.
+	* `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`: These classes inherit directly from `BaseValue` and store the corresponding raw C++ type data. They provide explicit conversion operators to their internally stored types.
+	* `JSONObject`: Represents a JSON object. Internally, it uses two `std::vector`s: one to store keys (`std::string`) and another to store corresponding values (`std::shared_ptr<JSON>`). This allows the value of a JSON object to itself be a `JSON` object (thus supporting nesting).
+	* `JSONArray`: Represents a JSON array. Internally, it uses a `std::vector<std::shared_ptr<JSON>>` to store its elements, also supporting nesting.
 
 ### Parsing (`parse_value` function and constructors)
 
   * Parsing logic is primarily concentrated in the global helper function `parse_value`. This function takes a JSON string and a reference to the current parsing position.
   * It determines the type of the value to be parsed next by examining the character at the current position:
-      * `"`: Indicates a string.
-      * `{`: Indicates a JSON object.
-      * `[`: Indicates a JSON array.
-      * Digits, `-`, `+`: Indicate an integer or a floating-point number.
-      * `t` (true), `f` (false): Indicate a boolean value.
-      * `n` (null): Indicates a null value.
+	* `"`: Indicates a string.
+	* `{`: Indicates a JSON object.
+	* `[`: Indicates a JSON array.
+	* Digits, `-`, `+`: Indicate an integer or a floating-point number.
+	* `t` (true), `f` (false): Indicate a boolean value.
+	* `n` (null): Indicates a null value.
   * Based on the identified type, it extracts the corresponding substring or value and constructs a `shared_ptr` to a `JSON` object containing the appropriate concrete value type (`StringValue`, `JSONObject`, `IntValue`, etc., wrapped in `JSON::Value`).
   * The constructors of `JSONObject` and `JSONArray` call `parse_value` to recursively parse their members or elements.
   * The `JSON` class constructor (`JSON(const string &str)`) decides whether to create a `JSONObject` or a `JSONArray` based on the first non-whitespace character of the input string (`{` or `[`).
@@ -89,9 +89,9 @@ The core of the CPPJSON library is the `JSON` class, which acts as a unified int
 ### Data Manipulation and Access
 
   * **`JSON` Class Operators**:
-      * `operator[]`: Provides the `JSON` object with the ability to access its internal `JSONObject` or `JSONArray` elements by key (string) or index (integer). It delegates the operation to the actual object stored in the underlying `std::variant` using `std::visit`. If the key or index does not exist, `JSONObject::operator[]` creates a new null-valued entry.
-      * `at()`: Provides functionality similar to `operator[]` but throws an `std::out_of_range` exception if the key or index does not exist.
-      * Assignment operators (`operator=`): Allow various C++ fundamental types and `JSON` objects to be assigned to a `JSON` instance, which internally creates the corresponding value type and stores it in the `std::variant`.
+	* `operator[]`: Provides the `JSON` object with the ability to access its internal `JSONObject` or `JSONArray` elements by key (string) or index (integer). It delegates the operation to the actual object stored in the underlying `std::variant` using `std::visit`. If the key or index does not exist, `JSONObject::operator[]` creates a new null-valued entry.
+	* `at()`: Provides functionality similar to `operator[]` but throws an `std::out_of_range` exception if the key or index does not exist.
+	* Assignment operators (`operator=`): Allow various C++ fundamental types and `JSON` objects to be assigned to a `JSON` instance, which internally creates the corresponding value type and stores it in the `std::variant`.
   * **Type Checking**: Methods like `isString()`, `isInteger()`, `isJSONObject()`, etc., determine the specific data type held by the current `JSON` instance by accessing the `valueType()` of the object stored in the `std::variant`.
   * **`JSONObject::keys()`**: Returns a list of all keys in the object.
   * **`JSONArray::push_back()` and `JSON::push_back()`**: Used to add elements to an array. `JSON::push_back()` first checks if it itself is an array type.
@@ -308,25 +308,25 @@ try {
 ### `JSON` Class
 
   * **Constructors**:
-      * `JSON(const string &str)`: Constructs from a JSON string.
-      * `JSON(const char str[])`: Constructs from a C-style JSON string.
+	* `JSON(const string &str)`: Constructs from a JSON string.
+	* `JSON(const char str[])`: Constructs from a C-style JSON string.
   * **Assignment Operators**: `operator=` overloaded to accept `std::string`, `const char[]`, `long double`, `double`, `long long`, `int`, `bool`, `std::nullptr_t`, and `const JSON&`.
   * **Access**:
-      * `JSON& operator[](const string &key)` / `JSON& operator[](const char key[])`: Object element access/creation.
-      * `JSON& operator[](const int &index)`: Array element access.
-      * `JSON& at(const string &key)` / `JSON& at(const char key[])`: Object element access with bounds checking.
+	* `JSON& operator[](const string &key)` / `JSON& operator[](const char key[])`: Object element access/creation.
+	* `JSON& operator[](const int &index)`: Array element access.
+	* `JSON& at(const string &key)` / `JSON& at(const char key[])`: Object element access with bounds checking.
   * **Type Checking**: `isString()`, `isInteger()`, `isFloat()`, `isBool()`, `isNULL()`, `isJSONObject()`, `isJSONArray()`.
   * **Type Conversion**: `explicit operator string() const`, `int()`, `long long()`, `double()`, `long double()`, `bool()`.
   * **Common Operations**:
-      * `bool empty() const`: Checks if empty (object or array).
-      * `size_t size() const`: Gets size (object or array).
+	* `bool empty() const`: Checks if empty (object or array).
+	* `size_t size() const`: Gets size (object or array).
   * **Object Operations**:
-      * `vector<string> keys()`: Gets all keys.
-      * `bool remove(const string &key)` / `bool remove(const char key[])`: Removes key-value pair.
-      * `JSON& merge(const args &... json_list)`: Merges other JSON objects.
+	* `vector<string> keys()`: Gets all keys.
+	* `bool remove(const string &key)` / `bool remove(const char key[])`: Removes key-value pair.
+	* `JSON& merge(const args &... json_list)`: Merges other JSON objects.
   * **Array Operations**:
-      * `template<typename T> void push_back(const T &value)`: Appends an element to the end of the array.
-      * `bool pop(int pos)`: Removes the element at the specified index.
+	* `template<typename T> void push_back(const T &value)`: Appends an element to the end of the array.
+	* `bool pop(int pos)`: Removes the element at the specified index.
 
 ### Helper Classes (`JSONObject`, `JSONArray`, `IntValue`, etc.)
 
@@ -337,27 +337,36 @@ These classes are primarily used internally by the `JSON` class and managed via 
 The project uses CMake for building.
 
 1.  **Ensure CMake is installed.**
+
 2.  Create a build directory in the project root and navigate into it:
-    ```bash
-    mkdir build
-    cd build
-    ```
+
+	```bash
+	mkdir build
+	cd build
+	```
+
 3.  Run CMake to generate build files:
-    ```bash
-    cmake ..
-    ```
+
+	```bash
+	cmake ..
+	```
+
 4.  Compile the project:
-    ```bash
-    cmake --build .
-    # Or use make (on Unix-like systems)
-    # make
-    ```
+
+	```bash
+	cmake --build .
+	# Or use make (on Unix-like systems)
+	# make
+	```
+
 5.  The executable (defaulting to `CPPJSON` as per `CMakeLists.txt`) will be generated in the build directory.
-    To run the example (like `main.cpp`):
-    ```bash
-    ./CPPJSON
-    ```
-    Ensure that the JSON files referenced in `main.cpp` (`../jsonfile1`, `../jsonfile2`) are correctly pathed relative to where the executable is run, or modify the file paths in `main.cpp`.
+	To run the example (like `main.cpp`):
+
+	```bash
+	./CPPJSON
+	```
+
+	Ensure that the JSON files referenced in `main.cpp` (`../jsonfile1`, `../jsonfile2`) are correctly pathed relative to where the executable is run, or modify the file paths in `main.cpp`.
 
 ## Potential Future Improvements
 

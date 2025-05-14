@@ -9,26 +9,26 @@ CPPJSON 是一个轻量级、高效的 C++ JSON 解析库。它允许开发者�
 ## 功能描述
 
 1.  **解析JSON数据**：
-      * 支持从 JSON 格式的字符串直接解析。
-      * 支持从文件流 (`std::ifstream`) 读取并解析 JSON 数据。
-      * 能够处理嵌套的 JSON 对象和 JSON 数组。
+	  * 支持从 JSON 格式的字符串直接解析。
+	  * 支持从文件流 (`std::ifstream`) 读取并解析 JSON 数据。
+	  * 能够处理嵌套的 JSON 对象和 JSON 数组。
 2.  **数据操作**：
-      * **访问与修改**：通过键 (对于 JSON 对象) 或索引 (对于 JSON 数组) 方便地访问和修改数据。
-      * **添加元素**：向 JSON 对象中添加新的键值对，或向 JSON 数组中追加元素。
-      * **删除元素**：从 JSON 对象中移除指定的键值对，或从 JSON 数组中删除指定位置的元素。
-      * **获取键集合**：获取 JSON 对象中所有的键。
+	  * **访问与修改**：通过键 (对于 JSON 对象) 或索引 (对于 JSON 数组) 方便地访问和修改数据。
+	  * **添加元素**：向 JSON 对象中添加新的键值对，或向 JSON 数组中追加元素。
+	  * **删除元素**：从 JSON 对象中移除指定的键值对，或从 JSON 数组中删除指定位置的元素。
+	  * **获取键集合**：获取 JSON 对象中所有的键。
 3.  **对象管理**：
-      * **拷贝**：支持 JSON 对象的深拷贝（通过拷贝构造函数和拷贝赋值运算符）。
-      * **合并**：支持将一个或多个 JSON 对象合并到当前 JSON 对象中（目前实现为键值对的追加）。
+	  * **拷贝**：支持 JSON 对象的深拷贝（通过拷贝构造函数和拷贝赋值运算符）。
+	  * **合并**：支持将一个或多个 JSON 对象合并到当前 JSON 对象中（目前实现为键值对的追加）。
 4.  **类型支持与检查**：
-      * 支持常见的 JSON 数据类型：字符串、整数、浮点数、布尔值、null、JSON 对象和 JSON 数组。
-      * 提供类型检查方法（如 `isString()`, `isInteger()`, `isJSONObject()` 等）。
-      * 支持显式类型转换到对应的 C++ 类型（如 `static_cast<std::string>(json_value)`）。
+	  * 支持常见的 JSON 数据类型：字符串、整数、浮点数、布尔值、null、JSON 对象和 JSON 数组。
+	  * 提供类型检查方法（如 `isString()`, `isInteger()`, `isJSONObject()` 等）。
+	  * 支持显式类型转换到对应的 C++ 类型（如 `static_cast<std::string>(json_value)`）。
 5.  **序列化**：
-      * 支持将 JSON 对象或数组打印（序列化）到输出流 (`std::ostream`)，例如控制台或文件。
+	  * 支持将 JSON 对象或数组打印（序列化）到输出流 (`std::ostream`)，例如控制台或文件。
 6.  **便捷操作**：
-      * 检查 JSON 对象或数组是否为空 (`empty()`)。
-      * 获取 JSON 对象或数组的大小 (`size()`)。
+	  * 检查 JSON 对象或数组是否为空 (`empty()`)。
+	  * 获取 JSON 对象或数组的大小 (`size()`)。
 
 ## 应用技术
 
@@ -39,13 +39,13 @@ CPPJSON 的实现主要依赖以下 C++ 特性：
   * **类与继承**：定义了 `BaseValue` 作为所有 JSON 值类型的基类，派生出 `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`, `JSONObject`, `JSONArray` 等具体类型。使用了虚函数和多态。
   * **智能指针**：广泛使用 `std::shared_ptr` 来管理动态分配的 JSON 值对象的生命周期，简化内存管理。
   * **STL 容器**：
-      * `std::vector<std::string>` 用于存储 `JSONObject` 的键。
-      * `std::vector<std::shared_ptr<JSON>>` 用于存储 `JSONObject` 的值和 `JSONArray` 的元素。
+	* `std::vector<std::string>` 用于存储 `JSONObject` 的键。
+	* `std::vector<std::shared_ptr<JSON>>` 用于存储 `JSONObject` 的值和 `JSONArray` 的元素。
   * **运算符重载**：
-      * 输入/输出流运算符 (`<<`, `>>`) 用于序列化和反序列化。
-      * 下标运算符 (`[]`) 用于访问对象和数组元素。
-      * 赋值运算符 (`=`) 用于赋值不同类型的值给 `JSON` 对象。
-      * 比较运算符 (`==`, `!=`) 用于比较两个 `JSON` 对象是否相等。
+	* 输入/输出流运算符 (`<<`, `>>`) 用于序列化和反序列化。
+	* 下标运算符 (`[]`) 用于访问对象和数组元素。
+	* 赋值运算符 (`=`) 用于赋值不同类型的值给 `JSON` 对象。
+	* 比较运算符 (`==`, `!=`) 用于比较两个 `JSON` 对象是否相等。
   * **类型转换**：使用 `explicit` 关键字定义类型转换操作符，避免不期望的隐式转换。
   * **异常处理**：使用 `std::runtime_error` 和 `std::out_of_range` 等异常来报告解析错误或运行时错误。
   * **右值引用与移动语义**：虽然在提供的代码片段中不明显，但现代C++库通常会考虑这些以提高性能。
@@ -68,20 +68,20 @@ CPPJSON 库的核心是 `JSON` 类，它充当了所有 JSON 数据类型的统�
 
   * **`BaseValue` 类**：这是一个抽象基类，定义了所有 JSON 值类型共有的接口，主要是 `valueType()` 方法，用于返回值的具体类型（通过预定义的宏如 `STRING_TYPE`, `JSON_OBJECT_TYPE` 等）。
   * **具体值类**：
-      * `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`：这些类直接继承自 `BaseValue`，并存储相应的原始 C++ 类型数据。它们提供了到其内部存储类型的显式转换操作符。
-      * `JSONObject`：表示 JSON 对象。内部使用两个 `std::vector`：一个存储键 (`std::string`)，另一个存储对应的值 (`std::shared_ptr<JSON>`)。这允许 JSON 对象的值本身也是一个 `JSON` 对象（从而支持嵌套）。
-      * `JSONArray`：表示 JSON 数组。内部使用一个 `std::vector<std::shared_ptr<JSON>>` 来存储其元素，同样支持嵌套。
+	* `IntValue`, `FloatValue`, `StringValue`, `BoolValue`, `NULLValue`：这些类直接继承自 `BaseValue`，并存储相应的原始 C++ 类型数据。它们提供了到其内部存储类型的显式转换操作符。
+	* `JSONObject`：表示 JSON 对象。内部使用两个 `std::vector`：一个存储键 (`std::string`)，另一个存储对应的值 (`std::shared_ptr<JSON>`)。这允许 JSON 对象的值本身也是一个 `JSON` 对象（从而支持嵌套）。
+	* `JSONArray`：表示 JSON 数组。内部使用一个 `std::vector<std::shared_ptr<JSON>>` 来存储其元素，同样支持嵌套。
 
 ### 解析 (`parse_value` 函数及构造函数)
 
   * 解析逻辑主要集中在全局辅助函数 `parse_value` 中。此函数接收一个 JSON 字符串和当前解析位置的引用。
   * 它通过检查当前位置的字符来判断接下来要解析的值的类型：
-      * `"`：表示字符串。
-      * `{`：表示 JSON 对象。
-      * `[`：表示 JSON 数组。
-      * 数字、`-`、`+`：表示整数或浮点数。
-      * `t` (true), `f` (false)：表示布尔值。
-      * `n` (null)：表示 null 值。
+	* `"`：表示字符串。
+	* `{`：表示 JSON 对象。
+	* `[`：表示 JSON 数组。
+	* 数字、`-`、`+`：表示整数或浮点数。
+	* `t` (true), `f` (false)：表示布尔值。
+	* `n` (null)：表示 null 值。
   * 根据识别的类型，它会提取相应的子字符串或值，并构造一个包含相应具体值类型 (`StringValue`, `JSONObject`, `IntValue` 等封装在 `JSON::Value` 中) 的 `JSON` 对象的 `shared_ptr`。
   * `JSONObject` 和 `JSONArray` 的构造函数会调用 `parse_value` 来递归解析其成员或元素。
   * `JSON` 类的构造函数 (`JSON(const string &str)`) 会根据输入字符串的第一个非空字符（`{` 或 `[`）来决定是创建一个 `JSONObject` 还是 `JSONArray`。
@@ -89,9 +89,9 @@ CPPJSON 库的核心是 `JSON` 类，它充当了所有 JSON 数据类型的统�
 ### 数据操作与访问
 
   * **`JSON` 类的操作符**：
-      * `operator[]`：为 `JSON` 对象提供了通过键（字符串）或索引（整数）访问其内部 `JSONObject` 或 `JSONArray` 元素的能力。它通过 `std::visit` 将操作委托给底层的 `std::variant` 中存储的实际对象。如果键或索引不存在，`JSONObject::operator[]` 会创建一个新的 null 值条目。
-      * `at()`：提供了与 `operator[]` 类似的功能，但在键或索引不存在时会抛出 `std::out_of_range` 异常。
-      * 赋值操作符 (`operator=`)：允许将各种 C++ 基本类型和 `JSON` 对象赋值给一个 `JSON` 实例，内部会创建相应的值类型并存储在 `std::variant` 中。
+	* `operator[]`：为 `JSON` 对象提供了通过键（字符串）或索引（整数）访问其内部 `JSONObject` 或 `JSONArray` 元素的能力。它通过 `std::visit` 将操作委托给底层的 `std::variant` 中存储的实际对象。如果键或索引不存在，`JSONObject::operator[]` 会创建一个新的 null 值条目。
+	* `at()`：提供了与 `operator[]` 类似的功能，但在键或索引不存在时会抛出 `std::out_of_range` 异常。
+	* 赋值操作符 (`operator=`)：允许将各种 C++ 基本类型和 `JSON` 对象赋值给一个 `JSON` 实例，内部会创建相应的值类型并存储在 `std::variant` 中。
   * **类型检查**：`isString()`, `isInteger()`, `isJSONObject()` 等方法通过访问 `std::variant` 中存储的对象的 `valueType()` 来判断当前 `JSON` 实例持有的具体数据类型。
   * **`JSONObject::keys()`**：返回对象中所有键的列表。
   * **`JSONArray::push_back()` 和 `JSON::push_back()`**：用于向数组添加元素。`JSON::push_back()` 会首先检查自身是否为数组类型。
@@ -308,25 +308,25 @@ try {
 ### `JSON` 类
 
   * **构造函数**:
-      * `JSON(const string &str)`: 从JSON字符串构造。
-      * `JSON(const char str[])`: 从C风格JSON字符串构造。
+	* `JSON(const string &str)`: 从JSON字符串构造。
+	* `JSON(const char str[])`: 从C风格JSON字符串构造。
   * **赋值操作符**: `operator=` 重载以接受 `std::string`, `const char[]`, `long double`, `double`, `long long`, `int`, `bool`, `std::nullptr_t`, 和 `const JSON&`。
   * **访问**:
-      * `JSON& operator[](const string &key)` / `JSON& operator[](const char key[])`: 对象元素访问/创建。
-      * `JSON& operator[](const int &index)`: 数组元素访问。
-      * `JSON& at(const string &key)` / `JSON& at(const char key[])`: 带边界检查的对象元素访问。
+	* `JSON& operator[](const string &key)` / `JSON& operator[](const char key[])`: 对象元素访问/创建。
+	* `JSON& operator[](const int &index)`: 数组元素访问。
+	* `JSON& at(const string &key)` / `JSON& at(const char key[])`: 带边界检查的对象元素访问。
   * **类型检查**: `isString()`, `isInteger()`, `isFloat()`, `isBool()`, `isNULL()`, `isJSONObject()`, `isJSONArray()`.
   * **类型转换**: `explicit operator string() const`, `int()`, `long long()`, `double()`, `long double()`, `bool()`.
   * **通用操作**:
-      * `bool empty() const`: 检查是否为空 (对象或数组)。
-      * `size_t size() const`: 获取大小 (对象或数组)。
+	* `bool empty() const`: 检查是否为空 (对象或数组)。
+	* `size_t size() const`: 获取大小 (对象或数组)。
   * **对象操作**:
-      * `vector<string> keys()`: 获取所有键。
-      * `bool remove(const string &key)` / `bool remove(const char key[])`: 删除键值对。
-      * `JSON& merge(const args &... json_list)`: 合并其他JSON对象。
+	* `vector<string> keys()`: 获取所有键。
+	* `bool remove(const string &key)` / `bool remove(const char key[])`: 删除键值对。
+	* `JSON& merge(const args &... json_list)`: 合并其他JSON对象。
   * **数组操作**:
-      * `template<typename T> void push_back(const T &value)`: 向数组末尾添加元素。
-      * `bool pop(int pos)`: 删除指定索引的元素。
+	* `template<typename T> void push_back(const T &value)`: 向数组末尾添加元素。
+	* `bool pop(int pos)`: 删除指定索引的元素。
 
 ### 辅助类 (`JSONObject`, `JSONArray`, `IntValue`, etc.)
 
@@ -337,27 +337,36 @@ try {
 项目使用 CMake 进行构建。
 
 1.  **确保CMake已安装。**
+
 2.  在项目根目录下创建一个构建目录并进入：
-    ```bash
-    mkdir build
-    cd build
-    ```
+
+	```bash
+	mkdir build
+	cd build
+	```
+
 3.  运行CMake生成构建文件：
-    ```bash
-    cmake ..
-    ```
+
+	```bash
+	cmake ..
+	```
+
 4.  编译项目：
-    ```bash
-    cmake --build .
-    # 或者使用 make (在Unix-like系统上)
-    # make
-    ```
+
+	```bash
+	cmake --build .
+	# 或者使用 make (在Unix-like系统上)
+	# make
+	```
+
 5.  可执行文件 (默认为 `CPPJSON`，如 `CMakeLists.txt` 所示) 将会生成在构建目录中。
-    运行示例 (如 `main.cpp`):
-    ```bash
-    ./CPPJSON
-    ```
-    确保 `main.cpp` 中引用的JSON文件 (`../jsonfile1`, `../jsonfile2`) 相对于可执行文件的运行路径是正确的，或者修改 `main.cpp` 中的文件路径。
+	运行示例 (如 `main.cpp`):
+
+	```bash
+	./CPPJSON
+	```
+
+	确保 `main.cpp` 中引用的JSON文件 (`../jsonfile1`, `../jsonfile2`) 相对于可执行文件的运行路径是正确的，或者修改 `main.cpp` 中的文件路径。
 
 ## 未来可能的改进
 
